@@ -1,0 +1,123 @@
+
+
+
+Technology Stack:
+AppGallery Connect
+Cloud Foundation Kit
+Cloud Database
+
+Preface:
+Many web, mini-program, and mobile app developers have likely encountered this scenario: eager to develop an app but finding static data unappealing without backend support. Data couldn't be stored in the cloud or shared across devices. Now, Cloud Foundation Kit's cloud database solves this! As a lightweight cloud storage solution, it eliminates the need for extensive backend development—developers only need to manage database tables.
+Preparation:
+Open DevEcoStudio and create a cloud project.
+Create a new project in the console and bind it to DevEcoStudio.
+Enable the cloud database API for the project.
+Create a book table in the cloudprogram/objecttype directory:
+
+json
+{
+  "objectTypeName": "book",
+  "fields": [
+    {"fieldName": "id", "fieldType": "Integer", "notNull": true, "belongPrimaryKey": true},
+    {"fieldName": "book_name", "fieldType": "String"},
+    {"fieldName": "book_price", "fieldType": "String"},
+    {"fieldName": "book_type", "fieldType": "String"},
+    {"fieldName": "book_message", "fieldType": "String"},
+    {"fieldName": "book_user", "fieldType": "String"},
+    {"fieldName": "book_uot_home", "fieldType": "String"}
+  ],
+  "indexes": [
+    {"indexName": "IdIndex", "indexList": [{"fieldName":"id","sortType":"ASC"}]}
+  ],
+  "permissions": [
+    {"role": "World", "rights": ["Read"]},
+    {"role": "Authenticated", "rights": ["Read", "Upsert"]},
+    {"role": "Creator", "rights": ["Read", "Upsert", "Delete"]},
+    {"role": "Administrator", "rights": ["Read", "Upsert", "Delete"]}
+  ]
+}
+
+This structure resembles a typical book management system. Next, populate the book table with sample data in the dataentry package:
+
+json
+{
+  "cloudDBZoneName": "default",
+  "objectTypeName": "book",
+  "objects": [
+    {
+      "id": 10,
+      "book_name": "Dream of the Red Chamber",
+      "book_price": "22",
+      "book_type": "Literature",
+      "book_message": "Classical Chinese novel",
+      "book_user": "xxxx",
+      "book_uot_home": "Peking University Press"
+    }
+  ]
+}
+Data Query Implementation
+Unlike traditional HTTP requests, Cloud Foundation Kit's SDK provides dedicated APIs for seamless data query. First, create a DB class:
+
+typescript
+import { cloudDatabase } from '@kit.CloudFoundationKit';
+
+class book extends cloudDatabase.DatabaseObject {
+  public id: number;
+  public book_name: string;
+  public book_price: string;
+  public book_type: string;
+  public book_message: string;
+  public book_user: string;
+  public book_uot_home: string;
+
+  public naturalbase_ClassName(): string {
+    return 'book';
+  }
+}
+
+export { book };
+
+Then, create a page to query data:
+
+typescript
+import { cloudDatabase } from '@kit.CloudFoundationKit';
+import { book } from '../CloudDb/book';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+@Entry
+@Component
+struct TestPage {
+  @State message: string = 'Hello World';
+
+  async aboutToAppear(): Promise<void> {
+    let databaseZone = cloudDatabase.zone('default');
+    let condition = new cloudDatabase.DatabaseQuery(book);
+    let listData = await databaseZone.query(condition);
+    let json = JSON.stringify(listData);
+    hilog.debug(1, `${json}`, "");
+  }
+
+  build() {
+    RelativeContainer() {
+      Text(this.message)
+        .id('TestPageHelloWorld')
+        .fontSize($r('app.float.page_text_font_size'))
+        .fontWeight(FontWeight.Bold)
+        .alignRules({
+          center: { anchor: '__container__', align: VerticalAlign.Center },
+          middle: { anchor: '__container__', align: HorizontalAlign.Center }
+        })
+        .onClick(() => {
+          this.message = 'Welcome';
+        });
+    }
+    .height('100%')
+    .width('100%');
+  }
+}
+
+
+
+
+
+This demonstrates direct cloud data query using the cloud database API, eliminating the need for manual HTTP handling.
